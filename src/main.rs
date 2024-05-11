@@ -2,6 +2,7 @@ mod constants;
 mod consumer;
 mod producer;
 mod utils;
+mod context;
 
 use web_sys::{
     *,
