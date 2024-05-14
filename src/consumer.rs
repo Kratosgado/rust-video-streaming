@@ -48,18 +48,18 @@ pub fn consumer() -> Html {
             video_chunk.unchecked_into::<VideoFrame>().close();
         }) as Box<dyn FnMut(JsValue)>);
 
-        // error_video.forget();
-        // output.forget();
         let local_video_decoder = VideoDecoder::new(&VideoDecoderInit::new(
             error_video.as_ref().unchecked_ref(),
             output.as_ref().unchecked_ref(),
         ))
         .unwrap();
+        error_video.forget();
+        output.forget();
         local_video_decoder.configure(&VideoDecoderConfig::new(&VIDEO_CODEC));
         video_decoder.set(Some(local_video_decoder));
     } else if !(*video_ctx).chunk.is_none() {
         let chunk = (*video_ctx).chunk.as_ref().unwrap();
-        let mut video_vector = vec![0u8, chunk.byte_length() as u8];
+        let mut video_vector = vec![0u8; chunk.byte_length() as usize];
         let video_message = video_vector.as_mut();
         chunk.copy_to_with_u8_array(video_message);
         let decoder = (*video_decoder).to_owned().unwrap();
