@@ -14,8 +14,8 @@ pub fn consumer() -> Html {
     let video_decoder: UseStateHandle<Option<VideoDecoder>> = use_state(|| None);
 
     if (*video_decoder).is_none() {
-        let error_video = Closure::wrap(Box::new(|e| {
-            web_sys::console::log_1(&e);
+        let error_video = Closure::wrap(Box::new(|e: JsValue| {
+            log::error!("on error: {}", &e.as_string().unwrap());
         }) as Box<dyn FnMut(JsValue)>);
 
         let output = Closure::wrap(Box::new(|chunk: JsValue| {
@@ -48,6 +48,7 @@ pub fn consumer() -> Html {
             video_chunk.unchecked_into::<VideoFrame>().close();
         }) as Box<dyn FnMut(JsValue)>);
 
+        log::info!("before local video decoder");
         let local_video_decoder = VideoDecoder::new(&VideoDecoderInit::new(
             error_video.as_ref().unchecked_ref(),
             output.as_ref().unchecked_ref(),
@@ -58,6 +59,7 @@ pub fn consumer() -> Html {
         local_video_decoder.configure(&VideoDecoderConfig::new(&VIDEO_CODEC));
         video_decoder.set(Some(local_video_decoder));
     } else if !(*video_ctx).chunk.is_none() {
+        log::info!("chunk received");
         let chunk = (*video_ctx).chunk.as_ref().unwrap();
         let mut video_vector = vec![0u8; chunk.byte_length() as usize];
         let video_message = video_vector.as_mut();

@@ -1,2 +1,8 @@
 [build]
 rustflags = ["--cfg=web_sys_unstable_apis"]
+
+[env]
+RUST_LOG = "rust-video-streaming=debug"
+
+[term]
+color = 'auto'

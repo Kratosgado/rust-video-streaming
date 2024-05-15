@@ -44,8 +44,7 @@ pub fn producer() -> Html {
             );
 
             let error_handler = Closure::wrap(Box::new(move |e: JsValue| {
-                console::log_1(&JsString::from("on error"));
-                console::log_1(&e);
+                log::error!("on error: {}", &e.as_string().unwrap());
             }) as Box<dyn FnMut(JsValue)>);
             let output_handler = Closure::wrap(Box::new(move |chunk: JsValue| {
                 let video_chunk = chunk.clone().unchecked_into::<EncodedVideoChunk>();
@@ -75,7 +74,7 @@ pub fn producer() -> Html {
 
             loop {
                 let result = JsFuture::from(reader.read()).await.map_err(|e| {
-                    console::log_1(&e);
+                    log::error!("on error: {}", &e.as_string().unwrap());
                 });
                 match result {
                     Ok(js_frame) => {
@@ -85,7 +84,7 @@ pub fn producer() -> Html {
                         video_encoder.encode(&frame);
                         frame.close();
                     }
-                    Err(err) => console::log_1(&JsString::from(format!("Error: {:?}", err))),
+                    Err(_) => log::error!("on error: with frame"),
                 }
             }
         });
