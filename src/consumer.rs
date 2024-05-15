@@ -20,15 +20,11 @@ pub fn consumer() -> Html {
 
         let output = Closure::wrap(Box::new(|chunk: JsValue| {
             // let chunk = Box::new(original_chunk.cl);
-            let video_chunk = chunk.clone().unchecked_into::<HtmlImageElement>();
-            let width = Reflect::get(&chunk.clone(), &JsValue::from_str("width"))
-                .unwrap()
-                .as_f64()
-                .unwrap();
-            let height = Reflect::get(&chunk.clone(), &JsValue::from_str("height"))
-                .unwrap()
-                .as_f64()
-                .unwrap();
+            let video_chunk = chunk.clone().unchecked_into::<VideoFrame>();
+            log::info!("getting {:?}", video_chunk);
+            let width = video_chunk.display_width();
+            let height = video_chunk.display_height();
+
             let render_canvas = window()
                 .unwrap()
                 .document()
@@ -36,14 +32,14 @@ pub fn consumer() -> Html {
                 .get_element_by_id("render")
                 .unwrap()
                 .unchecked_into::<HtmlCanvasElement>();
-            render_canvas.set_width(width as u32);
-            render_canvas.set_height(height as u32);
+            render_canvas.set_width(width);
+            render_canvas.set_height(height);
             let ctx = render_canvas
                 .get_context("2d")
                 .unwrap()
                 .unwrap()
                 .unchecked_into::<CanvasRenderingContext2d>();
-            ctx.draw_image_with_html_image_element(&video_chunk, 0.0, 0.0)
+            ctx.draw_image_with_video_frame(&video_chunk, 0.0, 0.0)
                 .unwrap();
             video_chunk.unchecked_into::<VideoFrame>().close();
         }) as Box<dyn FnMut(JsValue)>);
@@ -58,7 +54,7 @@ pub fn consumer() -> Html {
         output.forget();
         local_video_decoder.configure(&VideoDecoderConfig::new(&VIDEO_CODEC));
         video_decoder.set(Some(local_video_decoder));
-    } else if !(*video_ctx).chunk.is_none() {
+    } else if (*video_ctx).chunk.is_some() {
         log::info!("chunk received");
         let chunk = (*video_ctx).chunk.as_ref().unwrap();
         let mut video_vector = vec![0u8; chunk.byte_length() as usize];
@@ -72,6 +68,8 @@ pub fn consumer() -> Html {
             chunk.type_(),
         ))
         .unwrap();
+        log::info!("chunk: {:?}", chunk.clone());
+
         decoder.decode(&encoded_video_chunk);
     }
 
